@@ -137,15 +137,17 @@ for snr_dB in tqdm(snr_dB_range):
 
         non_preprocessing_dataset.append(received_test_signal)
 
-        print(f"\n{num_sample}/{num_sample_per_snr}, {preamble_index} {snr_dB}dB/{end_snr_dB}dB")
+        print(f"\n{num_sample}/{num_sample_per_snr}, Preamble Index = {preamble_index}, {snr_dB}dB/{end_snr_dB}dB")
 
         num_sample += 1
 
-dataset_np = np.array(non_preprocessing_dataset)
+non_preprocessing_dataset_np = np.array(non_preprocessing_dataset)
+all_preamble_start_mapping_symbol_arr_np = np.array(all_preamble_start_mapping_symbol_arr)
+all_preamble_end_mapping_symbol_arr_np = np.array(all_preamble_end_mapping_symbol_arr)
 
 print('')
 print('-----------------Preamble Data shape-----------------')
-print(f"preamble_arr_shape = {dataset_np.shape}")
+print(f"preamble_arr_shape = {non_preprocessing_dataset_np.shape}")
 
 generated_data_dir = 'generated_dataset'
 config_data_dir = 'pi_' + str(prach_config.preambleIndex) + \
@@ -180,12 +182,12 @@ ending_symbol_arr_dir = os.path.join(non_preprocessing_data_path, ending_symbol_
 
 print('')
 print(f"Saving data to {dataset_dir}...")
-np.save(dataset_dir, dataset_np)
+np.save(dataset_dir, non_preprocessing_dataset_np)
 
 print(f"Saving data to {starting_symbol_arr_dir}...")
-np.save(starting_symbol_arr_dir, all_preamble_start_mapping_symbol_arr)
+np.save(starting_symbol_arr_dir, all_preamble_start_mapping_symbol_arr_np)
 
 print(f"Saving data to {ending_symbol_arr_dir}...")
-np.save(ending_symbol_arr_dir, all_preamble_end_mapping_symbol_arr)
+np.save(ending_symbol_arr_dir, all_preamble_end_mapping_symbol_arr_np)
 
 print('Done!')
