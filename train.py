@@ -9,7 +9,7 @@ sys.path.append("dataloader")
 from prach_data_loader import create_training_datasets, create_training_loaders
 
 sys.path.append("models")
-from models import NN_v1
+from models import ComplexNN_v1
 
 data_name = 'rx_1_freqComb_12_numFrame_1_'
 data_path = 'generated_dataset/pi_63_pci_158_rsi_39_prscs_30_puscs_30_zczc_8_fr_FR1_s_UnrestrictedSet_st_Unpaired_fs_0_snrRange_-40_21_/rx_1_freqComb_12_numFrame_1.npy'
@@ -41,7 +41,9 @@ acc_history = []
 
 input_size = data.shape[1]
 output_size = 64
-model = NN_v1(input_size=input_size, output_size=output_size).to(device)
+
+model = ComplexNN_v1(input_size=input_size, output_size=output_size).to(device)
+
 print('Model:')
 print(model)
 
@@ -60,7 +62,6 @@ for epoch in range(1, num_epochs + 1):
 
     model.train()
     epoch_loss = 0
-
 
     for i, batch in enumerate(train_dataloader):
         x, y_batch = [t.to(device) for t in batch]
