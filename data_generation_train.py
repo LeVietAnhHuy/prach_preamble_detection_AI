@@ -17,7 +17,7 @@ tap_powers_dB = np.array([-6.9, 0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13
 tap_delays = np.array([0, 65, 70, 190, 195, 200, 240, 325, 520, 1045, 1510, 2595])
 
 num_tx_antennas = 1
-num_rx_antennas = 1
+num_rx_antennas = 2
 
 print('')
 print('-----------------MIMO Configuration-----------------')
@@ -129,7 +129,8 @@ for snr_dB in tqdm(snr_dB_range):
 
 
         received_test_signal = tdlChannel.corrupt_data(all_preamble_arr[preamble_index])
-        received_test_signal = awgn(received_test_signal, snr_dB=snr_dB)
+        for antenna_index in range(num_rx_antennas):
+            received_test_signal[antenna_index, :] = awgn(received_test_signal[antenna_index, :], snr_dB=snr_dB)
 
         for antenna_index in range(num_rx_antennas):
             single_antenna_signal = received_test_signal[antenna_index, :]
