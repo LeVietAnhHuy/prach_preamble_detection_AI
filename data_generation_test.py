@@ -157,7 +157,7 @@ for snr_dB in tqdm(snr_dB_range):
                         avg_freq_signal_fftshift = fftshift(avg_freq_signal)
 
                         freq_sequence = avg_freq_signal_fftshift[PrachStartingResourceElementIndex_freqDomain:(PrachStartingResourceElementIndex_freqDomain + random_access_config.L_RA)]
-                        # freq_sequence = np.append(freq_sequence, preamble_index)   # label
+                        freq_sequence = np.append(freq_sequence, preamble_index)   # label
 
                         dataset.append(freq_sequence)
 
