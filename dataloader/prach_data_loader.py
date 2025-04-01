@@ -11,11 +11,11 @@ def create_training_datasets(data, label, valid_pct=0.2, seed=None):
                                                                       shuffle=True)
   val_size = len(label_valid)
   train_dataset = TensorDataset(
-      torch.tensor(data_train),
+      torch.tensor(data_train).type(torch.complex64),
       torch.tensor(label_train).long()
   )
   val_dataset = TensorDataset(
-      torch.tensor(data_valid),
+      torch.tensor(data_valid).type(torch.complex64),
       torch.tensor(label_valid).long()
   )
 

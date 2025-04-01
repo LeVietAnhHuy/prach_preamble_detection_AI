@@ -28,7 +28,7 @@ batch_size = 50
 datasets = create_training_datasets(data, label)
 train_dataloader, val_dataloader, val_size = create_training_loaders(datasets, batch_size=batch_size)
 
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')  #
 learning_rate = 0.001  # important parameter
 num_epochs = 50  # important parameter
 interations_per_epoch = len(train_dataloader)
@@ -40,9 +40,10 @@ loss_history = []
 acc_history = []
 
 input_size = data.shape[1]
-output_size = 64
+num_classes = 64
 
-model = ComplexNN_v1(input_size=input_size, output_size=output_size).to(device)
+# model = ComplexNN_v1(input_size=input_size, output_size=num_classes).to(device)
+model = ComplexNN_v1(input_size=input_size, output_size=num_classes, device=device).to(device)
 
 print('Model:')
 print(model)
@@ -64,9 +65,11 @@ for epoch in range(1, num_epochs + 1):
     epoch_loss = 0
 
     for i, batch in enumerate(train_dataloader):
-        x, y_batch = [t.to(device) for t in batch]
+        # x, y_batch = [t.to(device) for t in batch]
+        x, y_batch = [t.to("cuda") for t in batch]
         optimizer_Adam.zero_grad()
         output = model(x)
+        output = output.float()
         loss = criterion(output, y_batch)
         epoch_loss += loss.item()
         loss.backward()
@@ -79,9 +82,11 @@ for epoch in range(1, num_epochs + 1):
     correct, total = 0, 0
 
     for batch in val_dataloader:
-        x, y_batch = [t.to(device) for t in batch]
-        out = model(x)
-        preds = F.log_softmax(out, dim=1).argmax(dim=1)
+        # x, y_batch = [t.to(device) for t in batch]
+        x, y_batch = [t.to("cuda") for t in batch]
+        output = model(x)
+        output = output.float()
+        preds = F.log_softmax(output, dim=1).argmax(dim=1)
         total += y_batch.size(0)
         correct += (preds == y_batch).sum().item()
 
