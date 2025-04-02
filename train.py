@@ -44,7 +44,7 @@ loss_history = []
 acc_history = []
 
 input_size = data.shape[1]
-num_classes = 64
+num_classes = np.unique(label).size
 
 # model = ComplexNN_v1(input_size=input_size, output_size=num_classes).to(device)
 model = ComplexNN_v1(input_size=input_size, output_size=num_classes, device=device).to(device)
