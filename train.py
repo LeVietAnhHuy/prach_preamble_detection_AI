@@ -4,6 +4,7 @@ from torch.nn import functional as F
 import numpy as np
 import sys
 import os
+import matplotlib.pyplot as plt
 
 sys.path.append("dataloader")
 from prach_data_loader import create_training_datasets, create_training_loaders
@@ -20,7 +21,10 @@ dataset = np.load(data_path)
 
 train_size = dataset.shape[0]
 
+
 label = dataset[:, -1].astype(int)
+label = (label == 60).astype(int) # transform multivariate classification to binary classification
+
 data = np.delete(dataset, -1, 1)
 
 batch_size = 50
@@ -109,3 +113,24 @@ for epoch in range(1, num_epochs + 1):
             break
     if epoch % base == 0:
         print(f'Epoch: {epoch:3d}. Loss: {epoch_loss:.4f}. Acc.: {acc:2.2%}')
+
+plot_dir = 'plot'
+os.makedirs(plot_dir, exist_ok=True)
+
+# Plotting the loss & acc curves
+plt.figure(figsize=(7, 5))
+plt.plot(range(num_epochs), acc_history, color='g', label='Validation Accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+
+acc_plot = 'valAcc.png'
+plt.savefig(os.path.join(plot_dir, acc_plot))
+
+
+plt.figure(2, figsize=(7, 5))
+plt.plot(range(num_epochs), loss_history, color='g', label='Validation Loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+
+loss_plot = 'valLoss.png'
+plt.savefig(os.path.join(plot_dir, loss_plot))

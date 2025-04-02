@@ -31,3 +31,22 @@ def create_training_loaders(data, batch_size=20, jobs=0):
   val_dataloader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=jobs)
 
   return  train_dataloader, val_dataloader, val_size
+
+def create_testing_datasets(data_test, label_test, valid_pct=0.1, seed=None):
+
+  test_dataset = TensorDataset(
+      torch.tensor(data_test).type(torch.complex64),
+      torch.tensor(label_test).long()
+  )
+
+  return test_dataset
+
+def create_testing_loaders(data, batch_size=20, jobs=0):
+  """Wraps the datasets returned by create_datasets function
+  with data loaders."""
+
+  test_dataset = data
+
+  test_dataloader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True, num_workers=jobs)
+
+  return  test_dataloader
