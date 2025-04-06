@@ -17,7 +17,7 @@ tap_powers_dB = np.array([-6.9, 0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13
 tap_delays = np.array([0, 65, 70, 190, 195, 200, 240, 325, 520, 1045, 1510, 2595])
 
 num_tx_antennas = 1
-num_rx_antennas = 2
+num_rx_antennas = 1
 
 print('')
 print('-----------------MIMO Configuration-----------------')
@@ -112,7 +112,7 @@ for i in range(1, int(random_access_config.prachDuration / 2) + 1):
     if random_access_config.prachDuration % i == 0:
         divisors.append(i)
 divisors.append(random_access_config.prachDuration)
-sum_num = 12
+# sum_num = 12
 
 dataset = []
 num_sample_per_snr = 5000
@@ -190,7 +190,7 @@ config_data_dir = 'pi_' + str(prach_config.preambleIndex) + \
 
 config_data_path = os.path.join(generated_data_dir, config_data_dir)
 os.makedirs(config_data_path, exist_ok=True)
-dataset_name = 'rx_' + str(num_rx_antennas) + '_freqComb_' + str(sum_num)  + '_numFrame_' + str(carrier_config.numFrame) + '.npy'
+dataset_name = 'rx_' + str(num_rx_antennas) + '_freqComb_' + str(sum_num)  + '_numFrame_' + str(carrier_config.numFrame) + 'freq_comb.npy'
 dataset_dir = os.path.join(config_data_path, dataset_name)
 
 print('')
