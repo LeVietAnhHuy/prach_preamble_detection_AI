@@ -17,7 +17,7 @@ tap_powers_dB = np.array([-6.9, 0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13
 tap_delays = np.array([0, 65, 70, 190, 195, 200, 240, 325, 520, 1045, 1510, 2595])
 
 num_tx_antennas = 1
-num_rx_antennas = 1
+num_rx_antennas = 8
 
 print('')
 print('-----------------MIMO Configuration-----------------')
