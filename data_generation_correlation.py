@@ -79,7 +79,6 @@ for preindex in preamble_index_range:
 
     u, u_arr_unique = get_u(prach_config, random_access_config, N_CS)
 
-
     C_v, C_v_arr = get_C_v(prach_config, random_access_config, N_CS)
 
     x_u = calcBaseZC(random_access_config.L_RA, u)
@@ -194,10 +193,12 @@ for snr_dB in tqdm(snr_dB_range):
         for block_idx in range(num_block_prach):
             x_corr_ifft_rx_gain = selection_combining(x_corr_ifft[block_idx, :, :])
 
-            x_corr_ifft_rx_gain = np.append(x_corr_ifft_rx_gain, preamble_index)  # label
+            window_idx = preamble_index % C_v_arr.size
+
+            x_corr_ifft_rx_gain = np.append(x_corr_ifft_rx_gain, window_idx)  # label
             dataset.append(x_corr_ifft_rx_gain)
 
-            print(f"\n{num_sample}/{num_sample_per_snr}, PreIdx = {preamble_index}, num_sum_prach_rep = {num_sum_prach_rep}, {snr_dB}dB")
+            print(f"\n{num_sample}/{num_sample_per_snr}, PreIdx = {preamble_index}, windowIdx = {window_idx}, num_sum_prach_rep = {num_sum_prach_rep}, {snr_dB}dB")
 
             num_sample += 1
 
