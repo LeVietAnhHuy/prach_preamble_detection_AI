@@ -5,6 +5,7 @@ def selection_combining(rx_signal):
     Select the antenna with highest total signal power.
     Input: rx_signal shape = (N_antennas, T)
     """
+
     powers = np.sum(np.abs(rx_signal) ** 2, axis=1)
     best_idx = np.argmax(powers)
     return rx_signal[best_idx]
