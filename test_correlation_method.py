@@ -1,11 +1,11 @@
 import numpy as np
 import os
 from matplotlib import pyplot as plt
+from tqdm import tqdm
 
 from configuration import PrachConfig, CarrierConfig
 from get_random_access_configuration import RandomAccessConfig
 from get_ncs_root_cv import get_NCS, get_u, get_C_v
-from prach_modulation_demodulation import prach_modulation
 
 generated_data_dir = 'generated_dataset'
 config_data_dir = 'corr_antenna_gain_combining_dataset'
@@ -76,9 +76,13 @@ over_sampling = ifft_len / random_access_config.L_RA
 constant = 27
 num_detected_preamble = 0
 
-for sample_index in range(num_samples):
+print(f"Testing on {dataset_names[-1]}...")
+for sample_index in tqdm(range(num_samples)):
     xcorr = X[sample_index, :]
-    plt.plot(xcorr)
+    # fig, ax = plt.subplots()
+    # ax.plot(xcorr)
+    # plt.show()
+    # plt.close(fig='all')
     start_sample_window = int(np.ceil(over_sampling * N_CS * (max_num_preamble_per_seq - 1)))
     end_sample_window = int(ifft_len)
 
