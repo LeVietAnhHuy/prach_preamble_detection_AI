@@ -191,7 +191,8 @@ for snr_dB in tqdm(snr_dB_range):
         x_corr_ifft = np.roll(x_corr_ifft, shift=iff_circ_shift, axis=-1)
 
         for block_idx in range(num_block_prach):
-            x_corr_ifft_rx_gain = selection_combining(x_corr_ifft[block_idx, :, :])
+            # x_corr_ifft_rx_gain = selection_=  ombining(x_corr_ifft[block_idx, :, :])
+            x_corr_ifft_rx_gain = rms_gain_combining(x_corr_ifft[block_idx, :, :])
 
             window_idx = preamble_index % C_v_arr.size
 
@@ -213,7 +214,9 @@ config_data_dir = 'corr_antenna_gain_combining_dataset'
 config_data_path = os.path.join(generated_data_dir, config_data_dir)
 os.makedirs(config_data_path, exist_ok=True)
 
-dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_selectionComb_freqComb.npy'
+# dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_selectionComb_freqComb.npy'
+dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_rmsGainComb_freqComb.npy'
+
 
 dataset_dir = os.path.join(config_data_path, dataset_name)
 
