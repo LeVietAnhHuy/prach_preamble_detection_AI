@@ -19,6 +19,9 @@ from antenna_gain_combining_methods import selection_combining, switch_combining
 
 # from get_snr import snr_db_from_received
 
+generated_data_dir = 'generated_dataset'
+config_data_dir = 'corr_dataset'
+
 tap_powers_dB = np.array([-6.9, 0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13.0, -14.2, -16.0])
 
 tap_delays = np.array([0, 65, 70, 190, 195, 200, 240, 325, 520, 1045, 1510, 2595])
@@ -126,7 +129,7 @@ iff_circ_shift = -9
 
 # divisor = divisors[-1]
 
-dataset = []
+
 num_sample_per_snr = 150000
 num_sample_target_preamble_index = 1000
 target_preamble_index = 60
@@ -137,6 +140,7 @@ print('Generating data:')
 for snr_dB in tqdm(snr_dB_range):
     num_sample = 0
 
+    dataset = []
     while num_sample <= num_sample_per_snr:
         for preamble_index in range(64):
             #preamble_index = np.random.randint(64)
@@ -242,24 +246,22 @@ for snr_dB in tqdm(snr_dB_range):
             #
             #     num_sample += 1
 
-dataset_np = np.array(dataset)
-print('')
-print('-----------------Preamble Data shape-----------------')
-print(f"preamble_arr_shape = {dataset_np.shape}")
+    dataset_np = np.array(dataset)
+    config_data_path = os.path.join(generated_data_dir, config_data_dir)
+    os.makedirs(config_data_path, exist_ok=True)
 
-generated_data_dir = 'generated_dataset'
-config_data_dir = 'corr_antenna_gain_combining_dataset'
+    dataset_name = 'corr_' + str(snr_dB) + 'dB.npy'
 
-config_data_path = os.path.join(generated_data_dir, config_data_dir)
-os.makedirs(config_data_path, exist_ok=True)
+    dataset_dir = os.path.join(config_data_path, dataset_name)
 
-# dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_selectionComb_freqComb.npy'
-# dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_rmsGainComb_freqComb.npy'
-dataset_name = 'corr_data.npy'
+    print('')
+    print(f"Saving data to {dataset_dir}...")
+    np.save(dataset_dir, dataset_np)
+    print('Done!')
 
-dataset_dir = os.path.join(config_data_path, dataset_name)
+    del dataset_np
+    del dataset
 
-print('')
-print(f"Saving data to {dataset_dir}...")
-np.save(dataset_dir, dataset_np)
-print('Done!')
+
+
+
