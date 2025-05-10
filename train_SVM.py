@@ -13,8 +13,6 @@ import pickle
 # from pyimagesearch.datasets import SimpleDatasetLoader
 # from imutils import paths
 
-
-
 data_path = 'generated_dataset/pi_63_pci_158_rsi_39_prscs_30_puscs_30_zczc_8_fr_FR1_s_UnrestrictedSet_st_Unpaired_fs_0_snrRange_-40_21_'
 test_data_path = 'generated_dataset/pi_63_pci_158_rsi_39_prscs_30_puscs_30_zczc_8_fr_FR1_s_UnrestrictedSet_st_Unpaired_fs_0_snrRange_-30_-29_'
 
@@ -25,14 +23,16 @@ data_name = ['rx_1_freqComb_1_numFrame_1freq_comb.npy',
              'rx_4_freqComb_1_numFrame_1freq_comb.npy',
              'rx_4_freqComb_12_numFrame_1.npy',
              'rx_8_freqComb_3_numFrame_1freq_comb.npy',
-             'rx_8_freqComb_12_numFrame_1.npy']
+             'rx_8_freqComb_12_numFrame_1.npy',
+             'rx_2_corr_rmsGainComb_freqComb.npy']
 
 test_data_name = ['testing_rx_1_freqComb_12_numFrame_1.npy']
 
-picked_data = 0
+picked_data = -1
 data_file_path = os.path.join(data_path, data_name[picked_data])
 test_data_file_path = os.path.join(test_data_path, test_data_name[0])
 
+data_file_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/generated_dataset/corr_antenna_gain_combining_dataset/rx_2_corr_rmsGainComb_freqComb.npy'
 data = np.load(data_file_path)
 test_data = np.load(test_data_file_path)
 
@@ -57,7 +57,6 @@ svc = svm.SVC()
 model = GridSearchCV(svc, param_grid, verbose=4)
 model.fit(trainX, trainY)
 
-
 # model = SVC(kernel='poly', degree=2, gamma='auto', C=1, verbose=2)
 # model.fit(trainX, trainY)
 # print("Predicted labels:", model.predict(testX))
@@ -66,7 +65,9 @@ weights_path = 'weights'
 weight_name = 'SVC_' + data_name[picked_data] + '.pkl'
 weight_dir = os.path.join(weights_path, weight_name)
 
+print('Saving Model...')
 pickle.dump(model, open(weight_dir, "wb"))
+print('Done!')
 
 print('Accuracy Test:')
 print(classification_report(testY, model.predict(testX)))

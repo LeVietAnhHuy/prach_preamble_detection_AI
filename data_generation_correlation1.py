@@ -4,7 +4,6 @@ from get_ncs_root_cv import get_NCS, get_u, get_C_v
 from prach_modulation_demodulation import prach_modulation
 import numpy as np
 from numpy.fft import fft, fftshift, ifft
-import torch
 
 from prach_ofdm_info import PachOFDMInfo
 from pyphysim.reference_signals.zadoffchu import calcBaseZC
@@ -24,7 +23,7 @@ tap_powers_dB = np.array([-6.9, 0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13
 tap_delays = np.array([0, 65, 70, 190, 195, 200, 240, 325, 520, 1045, 1510, 2595])
 
 num_tx_antennas = 1
-num_rx_antennas = 24
+num_rx_antennas = 16
 
 print('')
 print('-----------------MIMO Configuration-----------------')
@@ -56,7 +55,7 @@ for preindex in preamble_index_range:
 
     ##########
     prach_config.preambleIndex = preindex
-    ##########20
+    ##########
 
     prach_config.prachConfigurationIndex = 158
     prach_config.rootSequenceIndex = 39
@@ -127,11 +126,9 @@ iff_circ_shift = -9
 # divisor = divisors[-1]
 
 dataset = []
-num_sample_per_snr = 150000
+num_sample_per_snr = 15000
 num_sample_target_preamble_index = 1000
 target_preamble_index = 60
-
-num_Cv = 0
 
 print('Generating data:')
 for snr_dB in tqdm(snr_dB_range):
@@ -162,40 +159,24 @@ for snr_dB in tqdm(snr_dB_range):
 
             received_test_signal = received_test_signal[:, prach_ofdm_information.cyclicPrefixLen:] # (num_rx, 49152)
             received_test_signal = np.reshape(received_test_signal, (num_rx_antennas, random_access_config.prachDuration, -1)) # (num_rx, 12, 4096)
-
-            # received_test_signal = fft(received_test_signal, axis=-1)
-            #received_test_signal = fftshift(received_test_signal, axes=-1)
-
-            received_test_signal = torch.from_numpy(received_test_signal).to('cuda')
-            received_test_signal = torch.fft.fft(received_test_signal, dim=-1)
-            received_test_signal = torch.fft.fftshift(received_test_signal, dim=-1)
-            received_test_signal = received_test_signal.cpu().numpy()
-
+            received_test_signal = fft(received_test_signal, axis=-1)
+            received_test_signal = fftshift(received_test_signal, axes=-1)
             received_test_signal = received_test_signal[:, :, PrachStartingResourceElementIndex_freqDomain:(PrachStartingResourceElementIndex_freqDomain + random_access_config.L_RA)] # (num_rx, 12, 139)
             received_test_signal = received_test_signal * math.sqrt(received_test_signal.shape[-1])
 
             # num_sum_prach_rep = np.random.choice(divisors)
-            num_sum_prach_rep = 1
-            num_block_prach = int(random_access_config.prachDuration / num_sum_prach_rep)
+            # num_block_prach = int(random_access_config.prachDuration / num_sum_prach_rep)
+            #
+            # received_test_signal = np.reshape(received_test_signal, (num_block_prach, num_rx_antennas, num_sum_prach_rep, -1))
+            #
+            # freq_comb_signal = np.sum(received_test_signal, axis=2)
+            # received_freq_comb_x_uv_fft_mat = freq_comb_signal / num_sum_prach_rep
 
-            received_test_signal = np.reshape(received_test_signal, (num_block_prach, num_rx_antennas, num_sum_prach_rep, -1))
+            x_u_mat = np.matlib.repmat(all_x_u_arr[preamble_index], 1, num_rx_antennas)
+            x_u_mat = np.reshape(x_u_mat, ( num_rx_antennas, -1))
+            x_u_fft_mat = fft(x_u_mat, axis=-1)
 
-            freq_comb_signal = np.sum(received_test_signal, axis=2)
-            received_freq_comb_x_uv_fft_mat = freq_comb_signal / num_sum_prach_rep
-            num_Cv += 1
-            if(num_Cv == C_v_arr.size):
-                preamble_index = abs(preamble_index - 20)
-
-            x_u_mat = np.matlib.repmat(all_x_u_arr[preamble_index], num_block_prach, num_rx_antennas)
-            x_u_mat = np.reshape(x_u_mat, (num_block_prach, num_rx_antennas, -1))
-
-            # x_u_fft_mat = fft(x_u_mat, axis=-1)
-
-            x_u_mat = torch.from_numpy(x_u_mat).to('cuda')
-            x_u_mat = torch.fft.fft(x_u_mat, dim=-1)
-            x_u_mat = x_u_mat.cpu().numpy()
-
-            xcorr = np.conj(received_freq_comb_x_uv_fft_mat) * x_u_mat
+            xcorr = np.conj(received_test_signal) * x_u_fft_mat
 
             match random_access_config.preambleFormat:
                 case '0' | '1' | '2' | '3':
@@ -203,44 +184,21 @@ for snr_dB in tqdm(snr_dB_range):
                 case default:
                     ifft_len = 1024
 
-            x_corr_ifft = np.zeros((num_block_prach, num_rx_antennas, ifft_len))
+            x_corr_ifft = np.zeros((num_rx_antennas, ifft_len))
             x_corr_ifft[:, :, :random_access_config.L_RA] = xcorr
-            #x_corr_ifft = ifft(x_corr_ifft, axis=-1)
-
-            x_corr_ifft = torch.from_numpy(x_corr_ifft).to('cuda')
-            x_corr_ifft = torch.fft.ifft(x_corr_ifft, dim=-1)
-            x_corr_ifft = x_corr_ifft.cpu().numpy()
-
+            x_corr_ifft = ifft(x_corr_ifft, axis=-1)
             x_corr_ifft = np.abs(x_corr_ifft)
             x_corr_ifft = np.roll(x_corr_ifft, shift=iff_circ_shift, axis=-1)
 
             window_idx = preamble_index % C_v_arr.size
-            if (num_Cv == C_v_arr.size):
-                window_idx = C_v_arr.size
-                num_Cv = 0
 
+            x_corr_ifft= np.append(x_corr_ifft, window_idx)
+            dataset.append(x_corr_ifft)
 
+            print(
+                f"\n{num_sample}/{num_sample_per_snr}, PreIdx = {preamble_index}, windowIdx = {window_idx}, {snr_dB}dB")
 
-            for i in range(x_corr_ifft.shape[0]):
-                for j in range(x_corr_ifft.shape[1]):
-                    x_corr = np.append(x_corr_ifft[i, j, :], window_idx)  # label
-
-                    dataset.append(x_corr)
-                    print(f"\n{num_sample}/{num_sample_per_snr}, PreIdx = {preamble_index}, windowIdx = {window_idx}, num_sum_prach_rep = {num_sum_prach_rep}, {snr_dB}dB")
-                    num_sample += 1
-
-            # for block_idx in range(num_block_prach):
-            #     # x_corr_ifft_rx_gain = selection_=  ombining(x_corr_ifft[block_idx, :, :])
-            #     x_corr_ifft_rx_gain = rms_gain_combining(x_corr_ifft[block_idx, :, :])
-            #
-            #     window_idx = preamble_index % C_v_arr.size
-            #
-            #     x_corr_ifft_rx_gain = np.append(x_corr_ifft_rx_gain, window_idx)  # label
-            #     dataset.append(x_corr_ifft_rx_gain)
-            #
-            #     print(f"\n{num_sample}/{num_sample_per_snr}, PreIdx = {preamble_index}, windowIdx = {window_idx}, num_sum_prach_rep = {num_sum_prach_rep}, {snr_dB}dB")
-            #
-            #     num_sample += 1
+            num_sample += 1
 
 dataset_np = np.array(dataset)
 print('')
@@ -254,8 +212,8 @@ config_data_path = os.path.join(generated_data_dir, config_data_dir)
 os.makedirs(config_data_path, exist_ok=True)
 
 # dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_selectionComb_freqComb.npy'
-# dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_rmsGainComb_freqComb.npy'
-dataset_name = 'corr_data.npy'
+dataset_name = 'rx_' + str(num_rx_antennas) + '_corr_rmsGainComb_freqComb.npy'
+
 
 dataset_dir = os.path.join(config_data_path, dataset_name)
 
