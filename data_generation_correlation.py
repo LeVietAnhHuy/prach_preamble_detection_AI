@@ -5,6 +5,7 @@ from prach_modulation_demodulation import prach_modulation
 import numpy as np
 from numpy.fft import fft, fftshift, ifft
 import torch
+import matplotlib.pyplot as plt
 
 from prach_ofdm_info import PachOFDMInfo
 from pyphysim.reference_signals.zadoffchu import calcBaseZC
@@ -22,12 +23,16 @@ from antenna_gain_combining_methods import selection_combining, switch_combining
 generated_data_dir = 'generated_dataset'
 config_data_dir = 'corr_dataset'
 
+image_dir = 'image'
+image_name_corr = 'corr.png'
+full_image_path_corr = os.path.join(image_dir, image_name_corr)
+
 tap_powers_dB = np.array([-6.9, 0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13.0, -14.2, -16.0])
 
 tap_delays = np.array([0, 65, 70, 190, 195, 200, 240, 325, 520, 1045, 1510, 2595])
 
 num_tx_antennas = 1
-num_rx_antennas = 24
+num_rx_antennas = 2
 
 print('')
 print('-----------------MIMO Configuration-----------------')
@@ -37,9 +42,9 @@ print(f"num_rx_antennas = {num_rx_antennas}")
 bandwidth = 100e6  # in Hetz
 Fd = 100  # Doppler frequency (in Hz)
 
-start_snr_dB = -30
+start_snr_dB = 15
 end_snr_dB = 16
-step_snr_dB = 5
+step_snr_dB = 1
 
 print('')
 print('-----------------Noise-----------------')
@@ -142,7 +147,7 @@ for snr_dB in tqdm(snr_dB_range):
 
     dataset = []
     while num_sample <= num_sample_per_snr:
-        for preamble_index in range(64):
+        for preamble_index in range(60, 64):
             #preamble_index = np.random.randint(64)
             # if num_sample <= num_sample_target_preamble_index:
             #     preamble_index = target_preamble_index
@@ -216,7 +221,20 @@ for snr_dB in tqdm(snr_dB_range):
             x_corr_ifft = x_corr_ifft.cpu().numpy()
 
             x_corr_ifft = np.abs(x_corr_ifft)
+            plt.plot(x_corr_ifft[0, 0, :])
+            full_image_path_corr = os.path.join(image_dir, 'abs_corr.png')
+            plt.savefig(full_image_path_corr, dpi=300)
+            print(f"Plot saved as '{full_image_path_corr}'")
+            plt.close()
+
             x_corr_ifft = np.roll(x_corr_ifft, shift=iff_circ_shift, axis=-1)
+            plt.plot(x_corr_ifft[0, 0, :])
+            full_image_path_corr = os.path.join(image_dir, 'abs_roll_corr.png')
+            plt.savefig(full_image_path_corr, dpi=300)
+            print(f"Plot saved as '{full_image_path_corr}'")
+            plt.close()
+
+
 
             window_idx = preamble_index % C_v_arr.size
             if (num_Cv == C_v_arr.size):
@@ -227,6 +245,15 @@ for snr_dB in tqdm(snr_dB_range):
 
             for i in range(x_corr_ifft.shape[0]):
                 for j in range(x_corr_ifft.shape[1]):
+
+                    plt.plot(x_corr_ifft[i, j, :])
+                    plt.savefig(full_image_path_corr, dpi=300)
+                    print(f"Plot saved as '{full_image_path_corr}'")
+                    plt.close()
+
+                    ########################################
+                    break
+                    ########################################
                     x_corr = np.append(x_corr_ifft[i, j, :], window_idx)  # label
 
                     dataset.append(x_corr)
