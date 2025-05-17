@@ -257,6 +257,7 @@ def prach_modulation(PrachConfig, CarrierConfig, RandomAccessConfig):
     C_v, C_v_arr = get_C_v(PrachConfig, RandomAccessConfig, N_CS)
 
     x_u = calcBaseZC(RandomAccessConfig.L_RA, u)
+    x_u_fft = fft(x_u)
 
     x_uv = np.roll(x_u, -C_v)
 
@@ -310,7 +311,7 @@ def prach_modulation(PrachConfig, CarrierConfig, RandomAccessConfig):
             start_mapping_symbol_arr = np.reshape(start_mapping_symbol_arr, (CarrierConfig.numFrame, -1))
             end_mapping_symbol_arr = np.reshape(end_mapping_symbol_arr, (CarrierConfig.numFrame, -1))
 
-    return time_domain_signal, start_mapping_symbol_arr, end_mapping_symbol_arr, PrachStartingResourceElementIndex_freqDomain
+    return time_domain_signal, start_mapping_symbol_arr, end_mapping_symbol_arr, PrachStartingResourceElementIndex_freqDomain, x_u_fft
 
 
 def get_preamble_corrlation_windows(PrachConfig, CarrierConfig, RandomAccessConfig, preamble_arr):
