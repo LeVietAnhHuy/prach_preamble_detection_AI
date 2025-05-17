@@ -92,12 +92,12 @@ for preindex in preamble_index_range:
      start_mapping_symbol_arr,
      end_mapping_symbol_arr,
      PrachStartingResourceElementIndex_freqDomain,
-     x_u_fft) = prach_modulation(prach_config, carrier_config, random_access_config)
+     x_u_fft_s) = prach_modulation(prach_config, carrier_config, random_access_config)
 
     all_preamble_arr.append(time_domain_signal)
     all_preamble_start_mapping_symbol_arr.append(start_mapping_symbol_arr)
     all_preamble_end_mapping_symbol_arr.append(end_mapping_symbol_arr)
-    x_u_fft_mat.append(x_u_fft)
+    x_u_fft_mat.append(x_u_fft_s)
 
 N_CS = get_NCS(prach_config, random_access_config)
 _, C_v_arr = get_C_v(prach_config, random_access_config, N_CS)
@@ -139,7 +139,7 @@ for snr_dB in tqdm(snr_dB_range):
 
     dataset = []
     while num_sample <= num_sample_per_snr:
-        for preamble_index in range(7, 64):
+        for preamble_index in range(1, 64):
             #preamble_index = np.random.randint(64)
             # if num_sample <= num_sample_target_preamble_index:
             #     preamble_index = target_preamble_index
@@ -147,11 +147,11 @@ for snr_dB in tqdm(snr_dB_range):
             # received_test_signal = awgn(all_preamble_arr[preamble_index], snr_dB=snr_dB)
             # received_test_signal = tdlChannel.corrupt_data(received_test_signal)
 
-            # received_test_signal = tdlChannel.corrupt_data(all_preamble_arr[preamble_index])
-            # for antenna_index in range(num_rx_antennas):
-            #     received_test_signal[antenna_index, :] = awgn(received_test_signal[antenna_index, :], snr_dB=snr_dB) # (num_rx, 1228800)
+            received_test_signal = tdlChannel.corrupt_data(all_preamble_arr[preamble_index])
+            for antenna_index in range(num_rx_antennas):
+                received_test_signal[antenna_index, :] = awgn(received_test_signal[antenna_index, :], snr_dB=snr_dB) # (num_rx, 1228800)
 
-            received_test_signal = np.tile(all_preamble_arr[preamble_index], (num_rx_antennas, 1))
+            # received_test_signal = np.tile(all_preamble_arr[preamble_index], (num_rx_antennas, 1))
 
             # np.savetxt('output.txt', rec_sig, fmt='%d')
 
@@ -168,13 +168,14 @@ for snr_dB in tqdm(snr_dB_range):
             received_test_signal = received_test_signal[:, prach_ofdm_information.cyclicPrefixLen:] # (num_rx, 49152)
             received_test_signal = np.reshape(received_test_signal, (num_rx_antennas, random_access_config.prachDuration, -1)) # (num_rx, 12, 4096)
 
-            # received_test_signal = fft(received_test_signal, axis=-1)
-            #received_test_signal = fftshift(received_test_signal, axes=-1)
+            received_test_signal = fft(received_test_signal, axis=-1)
+            received_test_signal = fftshift(received_test_signal, axes=-1)
 
-            received_test_signal = torch.from_numpy(received_test_signal).to('cuda')
-            received_test_signal = torch.fft.fft(received_test_signal, dim=-1)
-            received_test_signal = torch.fft.fftshift(received_test_signal, dim=-1)
-            received_test_signal = received_test_signal.cpu().numpy()
+            # received_test_signal = torch.from_numpy(received_test_signal).to('cpu')
+            # received_test_signal = torch.fft.fft(received_test_signal, dim=-1)
+            # received_test_signal = torch.fft.fftshift(received_test_signal, dim=-1)
+            # # received_test_signal = received_test_signal.cpu().numpy()
+            # received_test_signal = received_test_signal.numpy()
 
             received_test_signal = received_test_signal[:, :, PrachStartingResourceElementIndex_freqDomain:(PrachStartingResourceElementIndex_freqDomain + random_access_config.L_RA)] # (num_rx, 12, 139)
             received_test_signal = received_test_signal * math.sqrt(random_access_config.L_RA)
@@ -201,23 +202,27 @@ for snr_dB in tqdm(snr_dB_range):
             # x_u_mat = x_u_mat.cpu().numpy()
             received_test_signal = np.conj(received_test_signal)
             xcorr = received_test_signal * x_u_fft
-
+            # xcorr = xcorr / 100
+            xcorr1 = np.multiply(received_test_signal[1, 1, :], x_u_fft[1 , 1, :])
             match random_access_config.preambleFormat:
                 case '0' | '1' | '2' | '3':
                     ifft_len = 2048
                 case default:
                     ifft_len = 1024
 
-            x_corr_ifft = np.zeros((num_rx_antennas, random_access_config.prachDuration, ifft_len))
+            x_corr_ifft = np.zeros((num_rx_antennas, random_access_config.prachDuration, ifft_len), dtype=complex)
             x_corr_ifft[:, :, :random_access_config.L_RA] = xcorr
-            #x_corr_ifft = ifft(x_corr_ifft, axis=-1)
 
-            x_corr_ifft = torch.from_numpy(x_corr_ifft).to('cuda')
-            x_corr_ifft = torch.fft.ifft(x_corr_ifft, dim=-1)
-            x_corr_ifft = x_corr_ifft.cpu().numpy()
+            x_corr_ifft = ifft(x_corr_ifft, axis=-1)
+
+            # x_corr_ifft = torch.from_numpy(x_corr_ifft).to('cpu')
+            # x_corr_ifft = torch.fft.ifft(x_corr_ifft, dim=-1)
+            # # x_corr_ifft = x_corr_ifft.cpu().numpy()
+            # x_corr_ifft = x_corr_ifft.resolve_conj().numpy()
 
             x_corr_ifft = np.abs(x_corr_ifft)
             plt.plot(x_corr_ifft[0, 0, :])
+            os.makedirs(image_dir, exist_ok=True)
             full_image_path_corr = os.path.join(image_dir, 'abs_corr.png')
             plt.savefig(full_image_path_corr, dpi=300)
             print(f"Plot saved as '{full_image_path_corr}'")

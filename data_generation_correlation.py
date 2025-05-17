@@ -24,6 +24,7 @@ generated_data_dir = 'generated_dataset'
 config_data_dir = 'corr_dataset'
 
 image_dir = 'image'
+os.makedirs(image_dir, exist_ok=True)
 image_name_corr = 'corr.png'
 full_image_path_corr = os.path.join(image_dir, image_name_corr)
 
@@ -103,9 +104,8 @@ for preindex in preamble_index_range:
     (time_domain_signal,
      start_mapping_symbol_arr,
      end_mapping_symbol_arr,
-     PrachStartingResourceElementIndex_freqDomain) = prach_modulation(prach_config,
-                                                                      carrier_config,
-                                                                      random_access_config)
+     PrachStartingResourceElementIndex_freqDomain,
+     x_u_fft) = prach_modulation(prach_config, carrier_config, random_access_config)
     all_preamble_arr.append(time_domain_signal)
     all_preamble_start_mapping_symbol_arr.append(start_mapping_symbol_arr)
     all_preamble_end_mapping_symbol_arr.append(end_mapping_symbol_arr)
@@ -138,6 +138,7 @@ iff_circ_shift = -9
 num_sample_per_snr = 150000
 num_sample_target_preamble_index = 1000
 target_preamble_index = 60
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 num_Cv = 0
 
@@ -175,7 +176,7 @@ for snr_dB in tqdm(snr_dB_range):
             # received_test_signal = fft(received_test_signal, axis=-1)
             #received_test_signal = fftshift(received_test_signal, axes=-1)
 
-            received_test_signal = torch.from_numpy(received_test_signal).to('cuda')
+            received_test_signal = torch.from_numpy(received_test_signal).to(device)
             received_test_signal = torch.fft.fft(received_test_signal, dim=-1)
             received_test_signal = torch.fft.fftshift(received_test_signal, dim=-1)
             received_test_signal = received_test_signal.cpu().numpy()
@@ -200,7 +201,7 @@ for snr_dB in tqdm(snr_dB_range):
 
             # x_u_fft_mat = fft(x_u_mat, axis=-1)
 
-            x_u_mat = torch.from_numpy(x_u_mat).to('cuda')
+            x_u_mat = torch.from_numpy(x_u_mat).to(device)
             x_u_mat = torch.fft.fft(x_u_mat, dim=-1)
             x_u_mat = x_u_mat.cpu().numpy()
 
@@ -216,13 +217,13 @@ for snr_dB in tqdm(snr_dB_range):
             x_corr_ifft[:, :, :random_access_config.L_RA] = xcorr
             #x_corr_ifft = ifft(x_corr_ifft, axis=-1)
 
-            x_corr_ifft = torch.from_numpy(x_corr_ifft).to('cuda')
+            x_corr_ifft = torch.from_numpy(x_corr_ifft).to(device)
             x_corr_ifft = torch.fft.ifft(x_corr_ifft, dim=-1)
             x_corr_ifft = x_corr_ifft.cpu().numpy()
 
             x_corr_ifft = np.abs(x_corr_ifft)
             plt.plot(x_corr_ifft[0, 0, :])
-            full_image_path_corr = os.path.join(image_dir, 'abs_corr.png')
+            full_image_path_corr = os.path.join(image_dir, 'abs_corr1.png')
             plt.savefig(full_image_path_corr, dpi=300)
             print(f"Plot saved as '{full_image_path_corr}'")
             plt.close()
