@@ -4,14 +4,11 @@ from tqdm import tqdm
 import numpy as np
 import torch
 
-gaf_corr_data_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_data.npy'
-gaf_corr_vgg_input_data_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_vgg_input_data.pt'
-image_dir = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/image'
+
+gaf_corr_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/corr_data_dot_mat/combined_gafd_corr_data.npy'
+gaf_corr_vgg_input_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_vgg_input_data.pt'
 
 gaf_corr_data = np.load(gaf_corr_data_path)
-
-path_InputData = '/content/gdrive/MyDrive/MachineLearningAndBigData_Semester2Year4/Final_FaceRecognition&Classification/data_img_CollectedFace/WelcomeCamera'
-path_OutputData = '/content/gdrive/MyDrive/MachineLearningAndBigData_Semester2Year4/Final_FaceRecognition&Classification/data_img_CollectedFace'
 
 gaf_corr_vgg_input_data = []
 

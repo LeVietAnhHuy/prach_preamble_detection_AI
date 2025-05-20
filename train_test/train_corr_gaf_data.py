@@ -11,16 +11,16 @@ import matplotlib.pyplot as plt
 sys.path.append("dataloader")
 from corr_gaf_data_loader import create_datasets_tensor_data, create_loaders_tensor_data
 
-gaf_corr_vgg_input_data_tensor_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_vgg_input_data.pt'
-label_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_vgg_input_label.npy'
-plot_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/plot'
+gaf_corr_vgg_input_data_tensor_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_vgg_input_data.pt'
+label_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/corr_data_dot_mat/gaf_corr_vgg_input_label.npy'
+plot_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/plot'
 
-train_test_log_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/train_test_log'
+train_test_log_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/train_test'
 
 corr_vgg_input_data_tensor = torch.load(gaf_corr_vgg_input_data_tensor_path)
 corr_vgg_input_label = np.load(label_path)
 
-save_model_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/weights'
+save_model_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/weights'
 os.makedirs(save_model_path, exist_ok=True)
 
 bs = 64
@@ -62,12 +62,11 @@ model = torch.hub.load('pytorch/vision:v0.10.0', model_name, pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'vgg19', pretrained=True)
 # model = torch.hub.load('pytorch/vision:v0.10.0', 'vgg19_bn', pretrained=True)
 
-
 criterion = nn.CrossEntropyLoss(reduction='sum')
 opt = optim.Adam(model.parameters(), lr=lr)
 total_params = sum(param.numel() for param in model.parameters())
 print('Total Parameter: ', total_params)
-print('Start model training')
+print(f'Start model training on:')
 
 for epoch in tqdm(range(1, n_epochs + 1)):
     model.train()
@@ -137,7 +136,7 @@ plt.tight_layout()
 plt.savefig(os.path.join(plot_path, model_name + '_train_val_loss.png'), dpi=300, bbox_inches='tight')
 plt.close()
 
-print(f"Start testing on {device}...\n")
+print(f"Start testing ...")
 
 model = torch.hub.load('pytorch/vision:v0.10.0', model_name, pretrained=False).to(device)
 model.load_state_dict(torch.load(os.path.join(save_model_path, model_name + '_corr_gaf_data.pth')))
@@ -155,4 +154,5 @@ for i in tqdm(range(num_test)):
 
     total_acc.append(correct / total)
 avg_acc = sum(total_acc) / num_test
-print(' Average Accuracy: ', avg_acc)
+print('done!')
+print('Average Accuracy: ', avg_acc)

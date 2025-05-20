@@ -3,7 +3,7 @@ import mat73
 import numpy as np
 import os
 
-corr_data_path = 'D:/5G_python/prach_ai/prach_preamble_detection_AI/corr_data_dot_mat'
+corr_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/corr_data_dot_mat'
 corr_data_list = os.listdir(corr_data_path)
 
 combined_corr_data = []
