@@ -11,7 +11,7 @@ import glob
 from torchvision import transforms
 
 sys.path.append("/home/sktt1anhhuy/prach_preamble_detection_AI/dataloader")
-from corr_gaf_data_loader import create_datasets_tensor_data, create_loaders_tensor_data
+from corr_gaf_data_loader import create_datasets_small_RAM ,create_loaders_small_RAM
 
 gaf_corr_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/gaf_corr_data'
 gaf_corr_data_list = glob.glob(os.path.join(gaf_corr_data_path, '*train_info*.npy'))
@@ -27,8 +27,8 @@ os.makedirs(save_model_path, exist_ok=True)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-bs = 64
-seed = 1
+bs = 16
+seed = 42
 np.random.seed(seed)
 
 to_tensor_vgg_input = transforms.Compose([
@@ -74,18 +74,18 @@ for epoch in tqdm(range(1, n_epochs + 1)):
 
         data_size = gaf_corr_data.shape[0]
 
-        datasets = create_datasets_tensor_data(gaf_corr_data, gaf_corr_label, data_size)
+        datasets = create_datasets_small_RAM(gaf_corr_data, gaf_corr_label, data_size)
 
-        train_dl, val_dl = create_loaders_tensor_data(datasets, bs=bs)
+        train_dl, val_dl = create_loaders_small_RAM(datasets, bs=bs)
 
-        total_train_size += data_size[2]
-        total_val_size += data_size[3]
+        total_train_size += datasets[2]
+        total_val_size += datasets[3]
 
         model.train()
 
         for i, batch in enumerate(train_dl):
             x, y_batch = [t.to(device) for t in batch]
-            x = to_tensor_vgg_input(x)
+            x = to_tensor_vgg_input(x).float()
             opt.zero_grad()
             out = model(x)
             loss = criterion(out, y_batch)
