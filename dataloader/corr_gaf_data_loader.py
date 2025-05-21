@@ -65,3 +65,25 @@ def create_loaders_tensor_data(data, bs=64, jobs=0):
     test_dl = DataLoader(test_ds, batch_size=bs, shuffle=True, num_workers=jobs)
 
     return train_dl, valid_dl, test_dl
+
+def create_datasets_small_RAM(data, label, data_size, valid_pct=0.2, seed=42):
+    idx = np.arange(data_size)
+    train_idx, val_idx = train_test_split(idx,
+                                                test_size=valid_pct,
+                                                random_state=seed,
+                                                shuffle=True)
+
+    train_ds = TensorDataset(torch.tensor(data[train_idx]), torch.tensor(label[train_idx]).long())
+    val_ds = TensorDataset(torch.tensor(data[val_idx]), torch.tensor(label[val_idx]).long())
+
+    return train_ds, val_ds, len(train_idx), len(val_idx)
+
+def create_loaders_small_RAM(data, bs=64, jobs=0):
+    train_ds, valid_ds, _, _ = data
+
+    train_dl = DataLoader(train_ds, batch_size=bs, shuffle=True, num_workers=jobs)
+    valid_dl = DataLoader(valid_ds, batch_size=bs, shuffle=True, num_workers=jobs)
+
+    return train_dl, valid_dl
+
+
