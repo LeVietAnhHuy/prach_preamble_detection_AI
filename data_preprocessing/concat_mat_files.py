@@ -6,14 +6,22 @@ import os
 corr_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/corr_data_dot_mat'
 corr_data_list = os.listdir(corr_data_path)
 
-combined_corr_data = []
+print(f'Appending {corr_data_list[0]}...')
+data_dict = mat73.loadmat(os.path.join(corr_data_path, corr_data_list[0]))
+combined_corr_data = data_dict['B']
+print('done!')
 
-for corr_data in corr_data_list:
-    data_dict = mat73.loadmat(os.path.join(corr_data_path, corr_data))
-    X = data_dict['B']
+del data_dict
 
-    combined_corr_data.append(data_dict['B'])
+for corr_data_idx in range(1, 2):
+    print(f'Appending {corr_data_list[corr_data_idx]}...')
+    data_dict = mat73.loadmat(os.path.join(corr_data_path, corr_data_list[corr_data_idx]))
+    combined_corr_data = np.concatenate((combined_corr_data, data_dict['B']), axis=0)
 
-combined_corr_data = np.concatenate(combined_corr_data, axis=0)
+    del data_dict
 
+    print('done!')
+
+print('Saving final file...')
 savemat("combined_corr_data.mat", {'B': combined_corr_data})
+print('DONE!')

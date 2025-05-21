@@ -30,7 +30,6 @@ def create_datasets(data, label, data_size, valid_pct=0.15, seed=42):
 
     return train_ds, valid_ds, test_ds
 
-
 def create_loaders(data, bs=64, jobs=0):
     train_ds, valid_ds, test_ds = data
 
@@ -39,8 +38,6 @@ def create_loaders(data, bs=64, jobs=0):
     test_dl = DataLoader(test_ds, batch_size=bs, shuffle=True, num_workers=jobs)
 
     return train_dl, valid_dl, test_dl
-
-
 
 def create_datasets_tensor_data(data, label, data_size, valid_pct=0.15, seed=42):
     idx = np.arange(data_size)
@@ -60,9 +57,8 @@ def create_datasets_tensor_data(data, label, data_size, valid_pct=0.15, seed=42)
 
     return train_ds, val_ds, test_ds, len(train_idx), len(test_idx), len(val_idx)
 
-
 def create_loaders_tensor_data(data, bs=64, jobs=0):
-    train_ds, valid_ds, test_ds = data
+    train_ds, valid_ds, test_ds, _, _, _ = data
 
     train_dl = DataLoader(train_ds, batch_size=bs, shuffle=True, num_workers=jobs)
     valid_dl = DataLoader(valid_ds, batch_size=bs, shuffle=True, num_workers=jobs)
