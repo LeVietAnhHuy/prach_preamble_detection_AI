@@ -37,7 +37,7 @@ to_tensor_vgg_input = transforms.Compose([
     ])
 
 lr = 0.001
-n_epochs = 50
+n_epochs = 30
 num_classes = 10
 best_acc = 0
 patience, trials = 500, 0
@@ -67,10 +67,14 @@ for epoch in tqdm(range(1, n_epochs + 1)):
     correct, total = 0, 0
     val_loss = 0
 
-    for data_idx in tqdm(range(len(gaf_corr_data_list))):
+    for data_idx in tqdm(range(1, len(gaf_corr_data_list))):
 
         gaf_corr_data = np.load(os.path.join(gaf_corr_data_path, gaf_corr_data_list[data_idx]))
-        gaf_corr_label = np.load(os.path.join(gaf_corr_data_path, gaf_corr_label_list[data_idx]))
+        dB_values = gaf_corr_data_list[data_idx].split('/')[-1].split('_')[2]
+
+        for label in gaf_corr_label_list:
+            if dB_values in label:
+                gaf_corr_label = np.load(os.path.join(gaf_corr_data_path, label))
 
         data_size = gaf_corr_data.shape[0]
 
@@ -83,7 +87,7 @@ for epoch in tqdm(range(1, n_epochs + 1)):
 
         model.train()
 
-        for i, batch in enumerate(train_dl):
+        for i, batch in enumerate(tqdm(train_dl)):
             x, y_batch = [t.to(device) for t in batch]
             x = to_tensor_vgg_input(x).float()
             opt.zero_grad()
@@ -96,14 +100,18 @@ for epoch in tqdm(range(1, n_epochs + 1)):
         model.eval()
         correct, total = 0, 0
         val_loss = 0
-        for batch in val_dl:
+        for batch in tqdm(val_dl):
             x, y_batch = [t.to(device) for t in batch]
+            x = to_tensor_vgg_input(x).float()
             out = model(x)
             loss = criterion(out, y_batch)
             val_loss += loss.item()
             preds = F.log_softmax(out, dim=1).argmax(dim=1)
             total += y_batch.size(0)
             correct += (preds == y_batch).sum().item()
+
+            del x, y_batch, out, loss
+            torch.cuda.empty_cache()
 
     train_loss /= total_train_size
     train_loss_history.append(train_loss)

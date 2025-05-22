@@ -66,7 +66,7 @@ def create_loaders_tensor_data(data, bs=64, jobs=0):
 
     return train_dl, valid_dl, test_dl
 
-def create_datasets_small_RAM(data, label, data_size, valid_pct=0.2, seed=42):
+def create_datasets_small_RAM(data, label, data_size, valid_pct=0.3, seed=42):
     idx = np.arange(data_size)
     train_idx, val_idx = train_test_split(idx,
                                                 test_size=valid_pct,
