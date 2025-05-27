@@ -5,7 +5,7 @@ import numpy.matlib
 import math
 
 def get_NCS(PrachConfig, RandomAccessConfig):
-    with open('./table6_prach.txt', 'r') as f:
+    with open('/home/sktt1anhhuy/prach_preamble_detection_AI/table6_prach.txt', 'r') as f:
         prachConfigTables = json.load(f)
 
     if (PrachConfig.zeroCorrelationZoneConfig > 15) or (PrachConfig.zeroCorrelationZoneConfig < 0):
@@ -26,7 +26,7 @@ def get_NCS(PrachConfig, RandomAccessConfig):
             raise(f"Expect RandomAccessConfig.L_RA ∈ {{139, 839, 571, 1151}} but got {RandomAccessConfig.L_RA}")
 
 def get_u(PrachConfig, RandomAccessConfig, N_CS):
-    with open('./table6_prach.txt', 'r') as f:
+    with open('/home/sktt1anhhuy/prach_preamble_detection_AI/table6_prach.txt', 'r') as f:
         prachConfigTables = json.load(f)
 
     match RandomAccessConfig.L_RA:

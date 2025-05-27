@@ -19,7 +19,7 @@ class RandomAccessConfig:
     ljust_num_chars: int = len('numTimeDomainPrachOccasionsWithinAPrachSlot') + 3
 
     def get_full_random_access_config(self, PrachConfig, CarrierConfig):
-        with open('./table6_prach.txt', 'r') as f:
+        with open('/home/sktt1anhhuy/prach_preamble_detection_AI/table6_prach.txt', 'r') as f:
             prachConfigTables = json.load(f)
 
         match PrachConfig.frequencyRange:

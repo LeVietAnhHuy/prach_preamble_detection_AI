@@ -1,6 +1,7 @@
 import torch
 import os
-from tqdm import tqdm
+# from tqdm import tqdm
+from tqdm.auto import tqdm
 import numpy as np
 import sys
 from torch.nn import functional as F
@@ -27,7 +28,7 @@ os.makedirs(save_model_path, exist_ok=True)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-bs = 16
+bs = 6
 seed = 42
 np.random.seed(seed)
 
@@ -48,7 +49,10 @@ train_loss_history = []
 val_loss_history = []
 acc_history = []
 
-model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn']
+model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
+              'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
+              'vit_b_16', 'vit_b_32', 'vit_l_16', 'vit_l_32', 'vit_h_14',
+              ]
 model_idx = 0
 
 model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
@@ -59,7 +63,7 @@ total_params = sum(param.numel() for param in model.parameters())
 print('Total Parameter: ', total_params)
 print(f'Start model training on:')
 
-for epoch in tqdm(range(1, n_epochs + 1)):
+for epoch in tqdm(range(1, n_epochs + 1), dynamic_ncols=True, leave=False):
     total_train_size = 0
     total_val_size = 0
 
@@ -67,7 +71,7 @@ for epoch in tqdm(range(1, n_epochs + 1)):
     correct, total = 0, 0
     val_loss = 0
 
-    for data_idx in tqdm(range(1, len(gaf_corr_data_list))):
+    for data_idx in tqdm(range(1, len(gaf_corr_data_list)), dynamic_ncols=True, leave=False):
 
         gaf_corr_data = np.load(os.path.join(gaf_corr_data_path, gaf_corr_data_list[data_idx]))
         dB_values = gaf_corr_data_list[data_idx].split('/')[-1].split('_')[2]
@@ -130,7 +134,7 @@ for epoch in tqdm(range(1, n_epochs + 1)):
         trials = 0
         best_acc = acc
 
-        torch.save(model.state_dict(), os.path.join(save_model_path, model_name + '_corr_gaf_data.pth'))
+        torch.save(model.state_dict(), os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data.pth'))
         print(f'Epoch {epoch} best model saved with accuracy: {best_acc:2.2%}')
 
     else:
@@ -149,5 +153,5 @@ plt.title('Training vs. Validation Loss')
 plt.grid(True)
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(plot_path, model_name + '_train_val_loss.png'), dpi=300, bbox_inches='tight')
+plt.savefig(os.path.join(plot_path, model_name[model_idx] + '_train_val_loss.png'), dpi=300, bbox_inches='tight')
 plt.close()

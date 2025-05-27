@@ -86,4 +86,16 @@ def create_loaders_small_RAM(data, bs=64, jobs=0):
 
     return train_dl, valid_dl
 
+def create_single_datasets_tensor_data(data, label):
+    data_ds = TensorDataset(torch.tensor(data), torch.tensor(label).long())
+
+    return data_ds, len(data_ds)
+
+def create_single_loaders_small_RAM(data, bs=64, jobs=0):
+    data_ds, _ = data
+
+    data_dl = DataLoader(data_ds, batch_size=bs, shuffle=True, num_workers=jobs)
+
+    return data_dl
+
 
