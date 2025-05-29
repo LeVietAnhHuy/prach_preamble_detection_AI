@@ -12,7 +12,7 @@ from get_random_access_configuration import RandomAccessConfig
 from get_ncs_root_cv import get_NCS, get_u, get_C_v
 
 img_path = '/image'
-corr_data_test = '/home/sktt1anhhuy/prach_preamble_detection_AI/split_corr_data_dot_npy'
+corr_data_test = '/home/sktt1anhhuy/prach_preamble_detection_AI/fft_pair_data'
 
 fft_pair_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/something'
 
@@ -144,9 +144,8 @@ for snr in tqdm(snr_range):
         ifft_corr_mat = np.abs(ifft_corr_mat)
         ifft_corr_mat = np.roll(ifft_corr_mat, shift=iff_circ_shift, axis=-1) # 8x28x1024
 
-        num_detected_preamble = 0
-
         # peak detection without non-coherent combining
+        num_detected_preamble = 0
         for rx_idx in range(ifft_corr_mat.shape[0]):
             for sample_idx in range(ifft_corr_mat.shape[1]):
 
@@ -196,7 +195,7 @@ for snr in tqdm(snr_range):
                     plt.close()
 
                 if label == len(C_v_arr):
-                    total_detected_preamble_idx += 1
+                    num_detected_preamble += 1
                     continue
 
                 if new_max_peak_threshold <= max_peak_threshold:
@@ -234,6 +233,7 @@ for snr in tqdm(snr_range):
 
         # peak detection with non-coherent combining
         num_detected_preamble_non_coherent_comb = 0
+
         ifft_corr_mat = np.sum(ifft_corr_mat, axis=0)
 
         for sample_idx in range(ifft_corr_mat.shape[0]):
@@ -318,10 +318,10 @@ for snr in tqdm(snr_range):
                 start_sample_window = int(end_sample_window % ifft_len)
                 end_sample_window = int(np.ceil(over_sampling * (ncv + 1) * N_CS))
 
-        ratio_non_coherent_comb = num_detected_preamble_non_coherent_comb / (corr_mat.shape[0] * corr_mat.shape[1])
+        ratio_non_coherent_comb = num_detected_preamble_non_coherent_comb / corr_mat.shape[0]
 
-        if ratio > 1 / (len(C_v_arr) + 1):
-            total_detected_preamble_idx += 1
+        if ratio_non_coherent_comb > 1 / (len(C_v_arr) + 1):
+            total_detected_preamble_idx_non_coherent_comb += 1
 
     print(f"\nAccuracy = {total_detected_preamble_idx / tot_test_samples}%\n")
 
