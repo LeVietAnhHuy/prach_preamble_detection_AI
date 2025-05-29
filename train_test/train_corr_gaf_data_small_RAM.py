@@ -55,7 +55,12 @@ model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
               ]
 model_idx = 0
 
-model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
+# train without check point
+# model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
+
+## train checkpoint
+model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
+model = model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data.pth')))
 
 criterion = nn.CrossEntropyLoss(reduction='sum')
 opt = optim.Adam(model.parameters(), lr=lr)
