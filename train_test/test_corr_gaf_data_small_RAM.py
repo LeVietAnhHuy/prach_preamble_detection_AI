@@ -12,7 +12,6 @@ from corr_gaf_data_loader import create_single_datasets_tensor_data, create_sing
 save_model_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/weights'
 gaf_corr_data_test = '/home/sktt1anhhuy/prach_preamble_detection_AI/gaf_corr_data_test'
 
-
 model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn']
 model_idx = 0
 
