@@ -56,12 +56,15 @@ model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
               ]
 model_idx = 4
 
-# train without check point
-# model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
+keep_train = False
 
-## train checkpoint
-model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
-model = model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data.pth')))
+# train without check point
+
+if keep_train:
+    model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
+    model = model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data.pth')))
+else:
+    model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
 
 criterion = nn.CrossEntropyLoss(reduction='sum')
 opt = optim.Adam(model.parameters(), lr=lr)
@@ -77,9 +80,8 @@ for epoch in tqdm(range(1, n_epochs + 1), dynamic_ncols=True, leave=False):
     correct, total = 0, 0
     val_loss = 0
 
-
     # for data_idx in tqdm(range(1, len(gaf_corr_data_list)), dynamic_ncols=True, leave=False):
-    for snr in snr_range:
+    for snr in tqdm(snr_range):
 
         gaf_corr_data_name = 'gafcorr_data_' + str(snr) + 'dB_train_info.npy'
         gaf_corr_label_name = 'gafcorr_data_' + str(snr) + 'dB_train_label.npy'
