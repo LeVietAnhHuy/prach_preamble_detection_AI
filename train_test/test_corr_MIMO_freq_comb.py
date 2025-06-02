@@ -5,16 +5,16 @@ from tqdm import tqdm
 from matplotlib import pyplot as plt
 import mat73
 from numpy.fft import ifft
+import numpy.matlib
 
 sys.path.append("/")
 from configuration import PrachConfig, CarrierConfig
 from get_random_access_configuration import RandomAccessConfig
 from get_ncs_root_cv import get_NCS, get_u, get_C_v
 
-img_path = '/image'
-corr_data_test = '/home/sktt1anhhuy/prach_preamble_detection_AI/fft_pair_data'
+img_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/image'
 
-fft_pair_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/something'
+fft_pair_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/fft_pair_data'
 
 prach_config = PrachConfig()
 
@@ -84,8 +84,8 @@ divisors.append(random_access_config.prachDuration)
 for snr in tqdm(snr_range):
 
     temp_file_name = 'pair_fft_data_' + str(snr) + 'dB_rx1.mat'
-    tot_num_samples = mat73.loadmat(os.path.join(fft_pair_data_path, file_name))['data'].shape[0]
-    tot_test_samples = tot_num_samples / random_access_config.prachDuration
+    tot_num_samples = mat73.loadmat(os.path.join(fft_pair_data_path, temp_file_name))['data'].shape[0]
+    tot_test_samples = int(tot_num_samples / random_access_config.prachDuration)
 
     total_detected_preamble_idx = 0
     total_detected_preamble_idx_non_coherent_comb = 0
@@ -107,8 +107,8 @@ for snr in tqdm(snr_range):
 
             data_mat.append(data)
 
-        x_u = data_dict['data'][start_sample_idx:end_sample_idx, random_access_config.L_RA:-1]
-        label = data_dict['label'][start_sample_idx:end_sample_idx, -1]
+        x_u = data_dict['data'][start_sample_idx, random_access_config.L_RA:-1]
+        label = data_dict['data'][start_sample_idx, -1]
 
         del data_dict
 
