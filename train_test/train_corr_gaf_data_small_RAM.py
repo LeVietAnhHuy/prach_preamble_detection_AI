@@ -28,10 +28,11 @@ os.makedirs(save_model_path, exist_ok=True)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-bs = 6
+bs = 128
 seed = 42
 np.random.seed(seed)
 snr_range = np.arange(-50, 1, 5)
+snr_range = np.flip(snr_range)
 
 to_tensor_vgg_input = transforms.Compose([
         transforms.Resize(224),          # VGG default
@@ -56,13 +57,13 @@ model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
               ]
 model_idx = 4
 
-keep_train = False
+keep_train = True
 
 # train without check point
 
 if keep_train:
     model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
-    model = model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data.pth')))
+    model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e2.pth')))
 else:
     model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
 

@@ -10,6 +10,8 @@ from numpy.fft import ifft
 import numpy.matlib
 from pyts.image import GramianAngularField
 import matplotlib.pyplot as plt
+import statistics
+import warnings
 
 sys.path.append("/home/sktt1anhhuy/prach_preamble_detection_AI/dataloader")
 from corr_gaf_data_loader import create_single_datasets_tensor_data, create_single_loaders_small_RAM
@@ -28,9 +30,9 @@ model_idx = 0
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
-model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data.pth')))
+model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_v0.pth')))
 
-snr_range = np.arange(-15, 31, 5)
+snr_range = np.arange(-50, 1, 5)
 bs = 16
 num_test = 3
 num_rx = 8
@@ -68,62 +70,105 @@ for snr in tqdm(snr_range):
 
     tot_num_samples = data_dict_mat[0].shape[0]
     tot_test_ite = int(tot_num_samples / prach_duration) # 127800
-    tot_correct = 0
 
-    for sample_idx in range(tot_test_ite):
+    tot_correct_without_rx_comb = 0
+    tot_correct_rx_comb = 0
+
+    for sample_idx in tqdm(range(tot_test_ite)):
         start_sample_idx = sample_idx * prach_duration
         end_sample_idx = start_sample_idx + prach_duration
 
         data_mat = []
 
-        for rx in tqdm(range(num_rx)):
+        for rx in range(num_rx):
             data = data_dict_mat[rx][start_sample_idx:end_sample_idx, :L_RA]
 
             data_mat.append(data)
 
         x_u = data_dict_mat[0][start_sample_idx, L_RA:-1]
-        label = int(data_dict_mat[0][start_sample_idx, -1])
-
-        del data_dict
+        label = np.abs(data_dict_mat[0][start_sample_idx, -1])
 
         data_mat = np.array(data_mat)  # 8x12x139
         data_mat_freq_comb_mat = []
 
         # frequency combining
+        pre_idx_without_rx_comb_1ite = []
+        pre_idx_rx_comb_1ite = []
+
         for div in divisors:
-            data_mat_freq_comb = np.reshape(data_mat,
-                                            (data_mat.shape[0], int(prach_duration / div), div, -1))
+            # print(f'\n div = {div}\n')
+            # div = 4
+            data_mat_freq_comb = np.reshape(data_mat,(data_mat.shape[0], int(prach_duration / div), div, -1))
             data_mat_freq_comb = np.sum(data_mat_freq_comb, axis=2) / div
-            data_mat_freq_comb_mat.append(data_mat_freq_comb)
 
-            del data_mat_freq_comb
+            x_u_mat = np.matlib.repmat(x_u, data_mat_freq_comb.shape[0], data_mat_freq_comb.shape[1])
+            x_u_mat = np.reshape(x_u_mat, (data_mat_freq_comb.shape[0], data_mat_freq_comb.shape[1], -1))
 
-        del data_mat
+            corr_mat = np.multiply(np.conjugate(data_mat_freq_comb), x_u_mat)  # 8x28x139
 
-        data_mat_freq_comb_mat = np.concatenate(data_mat_freq_comb_mat, axis=1)
+            ifft_corr_mat = np.zeros((corr_mat.shape[0], corr_mat.shape[1], 1024), dtype=np.complex128)
+            ifft_corr_mat[:, :, :L_RA] = corr_mat
 
-        x_u_mat = np.matlib.repmat(x_u, data_mat_freq_comb_mat.shape[0], data_mat_freq_comb_mat.shape[1])
-        x_u_mat = np.reshape(x_u_mat, (data_mat_freq_comb_mat.shape[0], data_mat_freq_comb_mat.shape[1], -1))
+            ifft_corr_mat = ifft(ifft_corr_mat, axis=-1)
 
-        corr_mat = np.multiply(np.conjugate(data_mat_freq_comb_mat), x_u_mat)  # 8x28x139
+            # with warnings.catch_warnings():
+            #     warnings.simplefilter("ignore", np.ComplexWarning)
 
-        del x_u_mat
-        del data_mat_freq_comb_mat
+            ifft_corr_mat = np.absolute(ifft_corr_mat)
+            ifft_corr_mat = np.roll(ifft_corr_mat, shift=ifft_circ_shift, axis=-1)
 
-        ifft_corr_mat = np.zeros((corr_mat.shape[0], corr_mat.shape[1], 1024))
-        ifft_corr_mat[:, :, :L_RA] = corr_mat
+            # without non-coherent combining
+            pre_idx_all_rx = []
+            for rx_idx in range(num_rx):
+                gaf_data = []
+                for div_idx in range(int(prach_duration / div)):
+                    sample_2d = np.array([ifft_corr_mat[rx_idx, div_idx, :]])
 
-        del corr_mat
+                    # plt.figure()
+                    # plt.plot(sample_2d[0])
+                    # plt.grid(True)
+                    # plt.savefig(os.path.join(img_path, 'test_corr_gaf_MIMO.png'), dpi=300, bbox_inches='tight')
+                    # plt.close()
 
-        ifft_corr_mat = ifft(ifft_corr_mat, axis=-1)
-        ifft_corr_mat = np.abs(ifft_corr_mat)
-        ifft_corr_mat = np.roll(ifft_corr_mat, shift=ifft_circ_shift, axis=-1)  # 8x28x1024
+                    gaf_img = gaf.fit_transform(sample_2d)
+                    gaf_img = gaf_img[0]
+                    img_3ch = np.stack([gaf_img, gaf_img, gaf_img], axis=0)
 
-        gaf_data = []
-        for rx in range(num_rx):
-            for idx in range(ifft_corr_mat.shape[1]):
+                    gaf_data.append(img_3ch)
 
-                sample_2d = np.array([ifft_corr_mat[rx, idx, :]])
+                    del img_3ch
+
+                gaf_label = np.zeros((1, int(prach_duration / div))) + label  # 1x224
+                gaf_label = gaf_label[0]
+                gaf_data = np.array(gaf_data)
+
+                test_samples = create_single_datasets_tensor_data(gaf_data, gaf_label)
+
+                test_dl = create_single_loaders_small_RAM(test_samples, bs=int(prach_duration / div))
+
+                for batch in test_dl:
+
+                    x, y_batch = [t.to(device) for t in batch]
+                    x = to_tensor_vgg_input(x).float()
+                    out = model(x)
+                    preds = F.log_softmax(out, dim=1).argmax(dim=1)
+                    pre_idx_1rx = torch.mode(preds).values.item()
+                    pre_idx_all_rx.append(pre_idx_1rx)
+
+            pre_idx_final = statistics.mode(pre_idx_all_rx)
+
+            ##############################
+            pre_idx_without_rx_comb_1ite.append(pre_idx_final)
+            ##############################
+
+            # with non-coherent combining
+            ifft_corr_mat = np.sum(ifft_corr_mat, axis=0)
+
+            pre_idx_1div = []
+
+            gaf_data = []
+            for div_idx in range(int(prach_duration / div)):
+                sample_2d = np.array([ifft_corr_mat[div_idx, :]])
 
                 # plt.figure()
                 # plt.plot(sample_2d[0])
@@ -137,29 +182,39 @@ for snr in tqdm(snr_range):
 
                 gaf_data.append(img_3ch)
 
-                del img_3ch
+            gaf_label = np.zeros((1, int(prach_duration / div))) + label  # 1x224
+            gaf_label = gaf_label[0]
+            gaf_data = np.array(gaf_data)
 
-        gaf_label = np.zeros((1, num_rx * ifft_corr_mat.shape[1])) + label # 1x224
-        gaf_label = gaf_label[0]
-        gaf_data = np.array(gaf_data)
+            test_samples = create_single_datasets_tensor_data(gaf_data, gaf_label)
 
-        test_datasets = create_single_datasets_tensor_data(gaf_data, gaf_label)
+            test_dl = create_single_loaders_small_RAM(test_samples, bs=int(prach_duration / div))
 
-        test_dl = create_single_loaders_small_RAM(test_datasets, bs=bs)
+            for batch in test_dl:
+                x, y_batch = [t.to(device) for t in batch]
+                x = to_tensor_vgg_input(x).float()
+                out = model(x)
+                preds = F.log_softmax(out, dim=1).argmax(dim=1)
+                pre_idx_rx_comb = torch.mode(preds).values.item()
+                pre_idx_1div.append(pre_idx_rx_comb)
 
-        correct, total = 0, 0
+            pre_idx_final = statistics.mode(pre_idx_1div)
 
-        x, y_batch = [t.to(device) for t in test_dl]
-        x = to_tensor_vgg_input(x).float()
-        out = model(x)
-        preds = F.log_softmax(out, dim=1).argmax(dim=1)
-        total += y_batch.size(0)
-        correct += (preds == y_batch).sum().item()
+            ##############################
+            pre_idx_rx_comb_1ite.append(pre_idx_final)
+            ##############################
 
-        avg_acc = correct / total
+        final_pre_idx_without_rx_comb_1ite = statistics.mode(pre_idx_without_rx_comb_1ite)
+        final_pre_idx_rx_comb_1ite = statistics.mode(pre_idx_rx_comb_1ite)
 
-        if avg_acc > 1/10:
-            tot_correct += 1
+        if final_pre_idx_without_rx_comb_1ite == label:
+            tot_correct_without_rx_comb += 1
 
-    tot_acc = tot_correct / tot_test_ite
-    print(f'Average Accuracy  of snr = {snr}dB: {tot_acc}\n')
+        if final_pre_idx_rx_comb_1ite == label:
+            tot_correct_rx_comb += 1
+
+    acc_without_rx_comb = tot_correct_without_rx_comb / tot_test_ite
+    acc_rx_comb = tot_correct_rx_comb / tot_test_ite
+
+    print(f'\nacc_without_rx_comb: {acc_without_rx_comb} \n'
+          f'acc_rx_comb: {acc_rx_comb} \n')
