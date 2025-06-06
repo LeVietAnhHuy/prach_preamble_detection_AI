@@ -10,6 +10,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import glob
 from torchvision import transforms
+import torchvision
 
 sys.path.append("/home/sktt1anhhuy/prach_preamble_detection_AI/dataloader")
 from corr_gaf_data_loader import create_datasets_small_RAM ,create_loaders_small_RAM
@@ -28,7 +29,7 @@ os.makedirs(save_model_path, exist_ok=True)
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-bs = 128
+bs = 16
 seed = 42
 np.random.seed(seed)
 snr_range = np.arange(-50, 1, 5)
@@ -55,9 +56,9 @@ model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
               'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
               'vit_b_16', 'vit_b_32', 'vit_l_16', 'vit_l_32', 'vit_h_14',
               ]
-model_idx = 4
+model_idx = 9
 
-keep_train = True
+keep_train = False
 
 # train without check point
 
@@ -65,7 +66,9 @@ if keep_train:
     model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
     model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e2.pth')))
 else:
-    model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
+    # model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=True).to(device)
+    pretrained_vit_weights = torchvision.models.ViT_B_16_Weights.DEFAULT
+    model = torchvision.models.vit_b_16(weights=pretrained_vit_weights).to(device)
 
 criterion = nn.CrossEntropyLoss(reduction='sum')
 opt = optim.Adam(model.parameters(), lr=lr)
@@ -81,21 +84,21 @@ for epoch in tqdm(range(1, n_epochs + 1), dynamic_ncols=True, leave=False):
     correct, total = 0, 0
     val_loss = 0
 
-    # for data_idx in tqdm(range(1, len(gaf_corr_data_list)), dynamic_ncols=True, leave=False):
-    for snr in tqdm(snr_range):
+    for data_idx in tqdm(range(0, len(gaf_corr_data_list)), dynamic_ncols=True, leave=False):
+    # for snr in tqdm(snr_range):
 
-        gaf_corr_data_name = 'gafcorr_data_' + str(snr) + 'dB_train_info.npy'
-        gaf_corr_label_name = 'gafcorr_data_' + str(snr) + 'dB_train_label.npy'
+        # gaf_corr_data_name = 'gafcorr_data_' + str(snr) + 'dB_train_info.npy'
+        # gaf_corr_label_name = 'gafcorr_data_' + str(snr) + 'dB_train_label.npy'
 
-        # gaf_corr_data = np.load(os.path.join(gaf_corr_data_path, gaf_corr_data_list[data_idx]))
-        # dB_values = gaf_corr_data_list[data_idx].split('/')[-1].split('_')[2]
+        gaf_corr_data = np.load(os.path.join(gaf_corr_data_path, gaf_corr_data_list[data_idx]))
+        dB_values = gaf_corr_data_list[data_idx].split('/')[-1].split('_')[2]
 
-        gaf_corr_data = np.load(os.path.join(gaf_corr_data_path, gaf_corr_data_name))
-        gaf_corr_label = np.load(os.path.join(gaf_corr_data_path, gaf_corr_label_name))
+        # gaf_corr_data = np.load(os.path.join(gaf_corr_data_path, gaf_corr_data_name))
+        # gaf_corr_label = np.load(os.path.join(gaf_corr_data_path, gaf_corr_label_name))
 
-        # for label in gaf_corr_label_list:
-        #     if dB_values in label:
-        #         gaf_corr_label = np.load(os.path.join(gaf_corr_data_path, label))
+        for label in gaf_corr_label_list:
+            if dB_values in label:
+                gaf_corr_label = np.load(os.path.join(gaf_corr_data_path, label))
 
         data_size = gaf_corr_data.shape[0]
 
