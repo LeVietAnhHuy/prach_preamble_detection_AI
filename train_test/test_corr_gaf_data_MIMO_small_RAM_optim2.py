@@ -14,28 +14,36 @@ import statistics
 import warnings
 from scipy import stats as st
 import cupy as cp
+import torchvision
 
-sys.path.append("/home/sktt1anhhuy/prach_preamble_detection_AI/dataloader")
+sys.path.append("/home/hoang/prach_preamble_detection_AI/dataloader")
 from corr_gaf_data_loader import create_single_datasets_tensor_data, create_single_loaders_small_RAM
 
-img_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/image'
-save_model_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/weights'
-fft_pair_data_path = '/home/sktt1anhhuy/prach_preamble_detection_AI/fft_pair_data'
+img_path = '/home/hoang/prach_preamble_detection_AI/image'
+save_model_path = '/home/hoang/prach_preamble_detection_AI/weights'
+fft_pair_data_path = '/home/hoang/prach_preamble_detection_AI/fft_pair_data'
 
 model_name = ['vgg11_bn', 'vgg13_bn', 'vgg16_bn', 'vgg19_bn',
+
               'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152',
               'vit_b_16', 'vit_b_32', 'vit_l_16', 'vit_l_32', 'vit_h_14',
               ]
-model_idx = 0
+model_idx = 4
 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
-model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
-model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_v0.pth')))
 
-snr_range = np.arange(-50, 1, 5)
-bs = 16
+model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
+model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e2.pth')))
+
+'''
+pretrained_vit_weights = torchvision.models.ViT_B_16_Weights.DEFAULT
+model = torchvision.models.vit_l_16().to(device)
+model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e2.pth')))
+'''
+snr_range = np.arange(-30, 1, 5)
+bs = 128
 num_test = 3
 num_rx = 8
 save_plot = False
@@ -58,7 +66,7 @@ to_tensor_vgg_input = transforms.Compose([
 gaf = GramianAngularField(method='difference', image_size=32)
 
 for snr in tqdm(snr_range):
-    print(f"\nTesting on snr = {snr}dB...\n")
+    print(f"\n{model_name[model_idx]} Testing on snr = {snr}dB...\n")
 
     data_dict_mat = []
 
@@ -106,7 +114,8 @@ for snr in tqdm(snr_range):
 
             data_mat_freq_comb_mat.append(data_mat_freq_comb)
 
-        data_mat_freq_comb_mat = np.array(data_mat_freq_comb_mat)
+        
+        data_mat_freq_comb_mat = cp.concatenate(data_mat_freq_comb_mat, axis=1)
 
         x_u_mat = cp.tile(x_u_gpu, (data_mat_freq_comb_mat.shape[0], data_mat_freq_comb_mat.shape[1], 1))
         x_u_mat = cp.reshape(x_u_mat, (data_mat_freq_comb_mat.shape[0], data_mat_freq_comb_mat.shape[1], -1))
