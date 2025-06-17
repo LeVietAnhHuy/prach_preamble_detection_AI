@@ -35,14 +35,14 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 
 model = torch.hub.load('pytorch/vision:v0.10.0', model_name[model_idx], pretrained=False).to(device)
-model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e10.pth')))
+model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e2.pth')))
 
 '''
 pretrained_vit_weights = torchvision.models.ViT_B_16_Weights.DEFAULT
 model = torchvision.models.vit_l_16().to(device)
 model.load_state_dict(torch.load(os.path.join(save_model_path, model_name[model_idx] + '_corr_gaf_data_e2.pth')))
 '''
-snr_range = np.arange(-50, 1, 5)
+snr_range = np.arange(-30, 1, 5)
 bs = 128
 num_test = 3
 num_rx = 8
